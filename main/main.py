@@ -7,11 +7,11 @@ Original file is located at
     https://colab.research.google.com/drive/1kTAq27HQhPDWklLMY0FLM4Ctzl1aXBuC
 """
 
-!pip install https://huggingface.co/turkish-nlp-suite/tr_core_news_trf/resolve/main/tr_core_news_trf-1.0-py3-none-any.whl
+#!pip install https://huggingface.co/turkish-nlp-suite/tr_core_news_trf/resolve/main/tr_core_news_trf-1.0-py3-none-any.whl
 
 import spacy
 import json
-
+import re
 import transformers
 from transformers import BertTokenizer, TFBertForSequenceClassification
 
@@ -35,7 +35,7 @@ def ab_model(test_texts):
   return result
 
 entities = ab_model(sentence)
-entities
+print(entities)
 
 def get_split_sentences_with_conjunction(entities1, text):
 
@@ -121,8 +121,22 @@ def find_fiilimsi(sentence):
 
     return fiilimsis
 
-def splitting(entity : list, sentence: str):
+def clean_text_for_dependency_parsing(sentence):
+    import string
+    keep_punctuation = {'.', '?'}
 
+    cleaned_sentence = ''.join(char for char in sentence if char not in string.punctuation or char in keep_punctuation)
+    return cleaned_sentence
+
+def normalize_entities(entities, sentence):
+    for entity in entities:
+        pattern = re.compile(rf'\b{entity}(\w*\'?\w*)?\b', re.IGNORECASE)
+        sentence = pattern.sub(entity, sentence)
+    return sentence
+
+def splitting(entity : list, sentence: str):
+    sentence = clean_text_for_dependency_parsing(sentence)
+    sentence = normalize_entities(entities, sentence)
     sentenceresults = list()
 
     if sentence.endswith("."):
@@ -268,6 +282,3 @@ with open("data.json", "a+") as file:
 
         # Write the JSON data to the file
         file.write(json_data + "\n")  # Add a newline to separate JSON objects
-
-        # Print the sentiment (optional)
-
