@@ -12,19 +12,20 @@ Original file is located at
 import spacy
 import json
 import re
-import transformers
+import tensorflow as tf
 from transformers import BertTokenizer, TFBertForSequenceClassification
 
 nlp = spacy.load('tr_core_news_trf')
 
 sentence = "Vodafone Kick kullanırken Youtube çok kasıyordu ama Turkcell kullanırken sıkıntı yoktu."
 entities = []
+load_path = 'spacy_trained_model' # modelin linkini koy
 
-def ab_model(test_texts):
-  load_path = 'spacy_trained_model' # modelin linkini koy
-  nlp = spacy.load(load_path)
-  result = []
-  for text in test_texts:
+nlp.add_pipe('sentencizer')
+
+def ab_model(text): 
+    nlp = spacy.load(load_path) 
+    result = []
     doc = nlp(text)
     print(f"Text: {text}")
     print("Entities:")
@@ -32,16 +33,17 @@ def ab_model(test_texts):
         print(f"  {ent.text}: {ent.label_}")
         result.append(ent.text)
 
-  return result
+    return result
 
 entities = ab_model(sentence)
 print(entities)
 
 def get_split_sentences_with_conjunction(entities1, text):
-
+    nlp = spacy.load('tr_core_news_trf')
     doc = nlp(text) # metnin tokenize haline getirilmesi
     split_sentences = [] # çıkarılan cümlelerin tutulacağı dizinin başlatılması
     add_old_entity = False # ilk durumda eski entity eklenmesi bool değeri False verilir.
+
 
     for token in doc: # metin içindeki her bir kelime için:
       sentence = [] # elde edilen metnin tutulacağ dizinin başlatılması
@@ -82,7 +84,8 @@ def get_split_sentences_with_conjunction(entities1, text):
               old_conjunction = conjunction # eski bağlaç bir değişkende tutulur
               k += 1 # baglac sayacı bir arttırılır
           split_sentences.append(sent[conjunction.i + 1:].text.strip()) # son baglactan sonra kalan metin alınır
-
+        else:
+            split_sentences.append(sent)
     while("" in split_sentences): # son alınan metin boş string ise diziden silinir
       split_sentences.remove("")
 
@@ -138,7 +141,7 @@ def splitting(entity : list, sentence: str):
     sentence = clean_text_for_dependency_parsing(sentence)
     sentence = normalize_entities(entities, sentence)
     sentenceresults = list()
-
+       
     if sentence.endswith("."):
         sentence = sentence[0:-1]
 
@@ -216,38 +219,38 @@ def splitting(entity : list, sentence: str):
 
     return sentenceresults
 
-def find_entities(entities,sentence):
-    entit = []
-    for word in sentence.split(" "):
-        if word in entities:
-            entit.append(word)
-    return entit
 
-sentence1 ="Vodafone RedTarife güzelken çok pahalılar"
-entity = ["Vodafone","Turkcell","RedTarife"]
-find_entities(entity,sentence1)
 
 def Dependency_Parser(entities:list, text:str):
     result = get_split_sentences_with_conjunction(entities, text)
+    print(result)
     sentence_results = []
 
     for sentence in result:
-        entity_list = find_entities(entities,sentence)
+        entity_list = ab_model(sentence)
         sentence_results.append(splitting(entity_list,sentence))
     return sentence_results
 
-sentence_result = []
 sentence_result = Dependency_Parser(entities, sentence)
+print("sentence result")
+print(sentence_result)
 
 # MODELI YUKLEME
 # model path-to-save isimli klasör içine koyulmalı
 # Load tokenizer
+path = "path-to-save"
 bert_tokenizer = BertTokenizer.from_pretrained(path +'/Tokenizer')
 
 # Load model
 bert_model = TFBertForSequenceClassification.from_pretrained(path +'/Model')
 
 # KULLANICI GIRISI ILE TAHMIN FONKSIYONU
+
+label = {
+	0: 'Olumsuz',
+	1: 'Olumlu',
+  2: 'Nötr'
+}
 
 def Get_sentiment(Review, Tokenizer=bert_tokenizer, Model=bert_model):
 	# Convert Review to a list if it's not already a list
@@ -268,17 +271,51 @@ def Get_sentiment(Review, Tokenizer=bert_tokenizer, Model=bert_model):
 	pred_labels = [label[i] for i in pred_labels.numpy().tolist()]
 	return pred_labels
 
-with open("data.json", "a+") as file:
+print(ab_model(sentence))
+print(Get_sentiment(sentence))
+print("Snetence result")
+print(sentence_result)
+
+with open("data.json", "a+", encoding='utf-8') as file:
     for sentence in sentence_result:
         # Create a dictionary for each sentence
-        data = {
-            "sentence": sentence,
-            "entities": ab_model(sentence),
-            "sentiment": Get_sentiment(sentence)
-        }
+        if sentence == []:
+            continue
+        else:
+            if len(sentence) == 1:
+                print("Cumle:")
+                print(sentence_result)
+                data = {
+                    "sentence": sentence,
+                    "entities": ab_model(str(sentence)),
+                    "sentiment": Get_sentiment(sentence)
+                }
+                print(sentence)
+                print(ab_model(str(sentence)))
+                print(Get_sentiment(sentence))
 
-        # Convert the dictionary to a JSON string
-        json_data = json.dumps(data, indent=4)
+                # Convert the dictionary to a JSON string
+                json_data = json.dumps(data, indent=4, ensure_ascii=False)
 
-        # Write the JSON data to the file
-        file.write(json_data + "\n")  # Add a newline to separate JSON objects
+                # Write the JSON data to the file
+                file.write(json_data + ",\n")
+            else:
+                for tempsentence in sentence:
+                    print("Cumle:")
+                    print(sentence_result)
+                    data = {
+                        "sentence": tempsentence,
+                        "entities": ab_model(str(tempsentence)),
+                        "sentiment": Get_sentiment(tempsentence)
+                    }
+                    print(tempsentence)
+                    print(ab_model(str(tempsentence)))
+                    print(Get_sentiment(tempsentence))
+
+                    # Convert the dictionary to a JSON string
+                    json_data = json.dumps(data, indent=4, ensure_ascii=False)
+
+                    # Write the JSON data to the file
+                    file.write(json_data + ",\n")
+            
+                  # Add a newline to separate JSON objects
