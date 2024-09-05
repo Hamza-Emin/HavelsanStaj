@@ -7,19 +7,14 @@ import tensorflow as tf
 from transformers import BertTokenizer, TFBertForSequenceClassification
 
 nlp = spacy.load('tr_core_news_trf')
-
+load_path = 'spacy_trained_model' 
+nlp.add_pipe('sentencizer')
 #ok sentence = "Turk Telekom her yönden çok daha iyi. Vodafone kullanıyorum ve 70 TL paket ücreti ödüyorum, 15gb 1000dk veriyor. Pahalı geliyor. Turkcell konusunda ise emin değilim."
 #ok sentence = "Turkcell çok iyi ama Vodafone kötü."
 #sorunlu 2 entity1 birleşik alıyor sentence = "valla kardeşim vodafone'den türk telekom'a geçtim gayet mutluyum. 1 sene olacak 20 gb paketi 61 lira gibi bir rakama kullanıyorum"
 #ok sentence = "turkcell çok pahalı. aynı koşullardaki tarifelere bakınca mecburen vodafone tercih ediyorum"
 #sorunlu fiilimsi yanlış ayırıyor sentence = "1 gb i̇nterneti 24 liraya satan vodafone vodafonehizmet  siz çok kazıkçısınız. en kısa zamanda sizden kurtulmak dileğiyle"
 #sorunlu span index out of range sentence = "ben de vodafone den ayrılıcam taahhütüm biter bitmez. ikidir 24tl ye 1 gb tanımlıyorlar hattıma hem de ben onay vermeden.. bu ay 106 tl faturam var"
-sentence = "çok mutlu oluruz. al birini vur ötekine. kurumsal dolandırıcılardan bıktım. turkcell vodafonetr"
-
-entities = []
-load_path = 'spacy_trained_model' 
-
-nlp.add_pipe('sentencizer')
 
 def ab_model(text): 
     nlp = spacy.load(load_path) 
@@ -30,6 +25,7 @@ def ab_model(text):
 
     return result
 
+
 def ab_model_with_label(text): 
     nlp = spacy.load(load_path) 
     result = []
@@ -39,8 +35,6 @@ def ab_model_with_label(text):
 
     return result
 
-entities = ab_model(sentence)
-print(entities)
 
 def get_split_sentences_with_conjunction(entities1, text):
     nlp = spacy.load('tr_core_news_trf')
@@ -97,6 +91,7 @@ def get_split_sentences_with_conjunction(entities1, text):
     #print(split_sentences)
     return split_sentences
 
+
 # Kaç tane entity olduğunu sayar
 def howmanyentity(sentence, entity):
     count = 0
@@ -107,6 +102,7 @@ def howmanyentity(sentence, entity):
             count = count+1
 
     return count
+
 
 fiilimsi_suffixes = [
     "ken", "alı", "eli", "madan", "meden", "ince", "ınca", "unca", "ünce",
@@ -130,6 +126,7 @@ def find_fiilimsi(sentence):
 
     return fiilimsis
 
+
 def clean_text_for_dependency_parsing(sentence):
     import string
     keep_punctuation = {'.', '?'}
@@ -137,11 +134,13 @@ def clean_text_for_dependency_parsing(sentence):
     cleaned_sentence = ''.join(char for char in sentence if char not in string.punctuation or char in keep_punctuation)
     return cleaned_sentence
 
+
 def normalize_entities(entities, sentence):
     for entity in entities:
         pattern = re.compile(rf'\b{entity}(\w*\'?\w*)?\b', re.IGNORECASE)
         sentence = pattern.sub(entity, sentence)
     return sentence
+
 
 def remove_spaces_from_entities(entities, sentence):
     for entity in entities:
@@ -162,7 +161,7 @@ def remove_spaces_from_entities(entities, sentence):
 
 def splitting(entity : list, sentence: str):
     sentence = clean_text_for_dependency_parsing(sentence)
-    sentence = normalize_entities(entities, sentence)
+    sentence = normalize_entities(entity, sentence)
     sentence , entity = remove_spaces_from_entities(entity,sentence)
     sentenceresults = list()
     if sentence.endswith("."):
@@ -236,6 +235,7 @@ def splitting(entity : list, sentence: str):
 
     return sentenceresults
 
+
 def fix_nonentity_sentences(sentence_result):
     #cümleleri gez, entity varsa al, sonrakinde entity yoksa başına ekle
     temp_sentence = ""
@@ -271,10 +271,6 @@ def Dependency_Parser(entities:list, text:str):
         entity_list = ab_model(sentence)
         sentence_results.append(splitting(entity_list,sentence))
     return sentence_results
-
-sentence_result = Dependency_Parser(entities, sentence)
-print("fiilimsi result")
-print(sentence_result)
 
 # MODELI YUKLEME
 # model path-to-save isimli klasör içine koyulmalı
@@ -317,30 +313,29 @@ def Get_sentiment(Review, Tokenizer=bert_tokenizer, Model=bert_model):
 #print("Snetence result")
 #print(sentence_result)
 
-with open("data.json", "w", encoding='utf-8') as file:
-    data = {
-        "sentence": sentence
-    }
-    entity_list = []
-    sentiment_list = []
-    for sentence in sentence_result:
-        # Create a dictionary for each sentence
-        if sentence == []:
-            continue
-        else:
-            if len(sentence) == 1:
-                print("Entity:")
-                print(ab_model("".join(sentence)))
-                if(len(ab_model("".join(sentence))) != 0):
-                    temp_entity = "".join(ab_model("".join(sentence))) + " -> " + "".join(ab_model_with_label("".join(sentence)))
-                    temp_sentiment = "".join(ab_model("".join(sentence))) + " -> " + "".join(Get_sentiment(sentence))
-                    entity_list.append(temp_entity)
-                    sentiment_list.append(temp_sentiment)
-                #print(sentence)
-                #print(ab_model(str(sentence)))
-                #print(Get_sentiment(sentence))
+def my_main(input_sentence):
+    #sentence = "çok mutlu oluruz. al birini vur ötekine. kurumsal dolandırıcılardan bıktım. turkcell vodafonetr"
+    sentence = input_sentence
+    entities = []
+    entities = ab_model(sentence)
+    print(entities)
+
+    sentence_result = Dependency_Parser(entities, sentence)
+    print("fiilimsi result")
+    print(sentence_result)
+    
+    with open("data.json", "w", encoding='utf-8') as file:
+        data = {
+            "sentence": sentence
+        }
+        entity_list = []
+        sentiment_list = []
+        for sentence in sentence_result:
+            # Create a dictionary for each sentence
+            if sentence == []:
+                continue
             else:
-                for tempsentence in sentence:
+                if len(sentence) == 1:
                     print("Entity:")
                     print(ab_model("".join(sentence)))
                     if(len(ab_model("".join(sentence))) != 0):
@@ -348,19 +343,33 @@ with open("data.json", "w", encoding='utf-8') as file:
                         temp_sentiment = "".join(ab_model("".join(sentence))) + " -> " + "".join(Get_sentiment(sentence))
                         entity_list.append(temp_entity)
                         sentiment_list.append(temp_sentiment)
-                    #print(tempsentence)
-                    #print(ab_model(str(tempsentence)))
-                    #print(Get_sentiment(tempsentence))
+                    #print(sentence)
+                    #print(ab_model(str(sentence)))
+                    #print(Get_sentiment(sentence))
+                else:
+                    print("Entity:")
+                    print(ab_model("".join(sentence)))
+                    if(len(ab_model("".join(sentence))) != 0):
+                        temp_entity = "".join(ab_model("".join(sentence))) + " -> " + "".join(ab_model_with_label("".join(sentence)))
+                        temp_sentiment = "".join(ab_model("".join(sentence))) + " -> " + "".join(Get_sentiment(sentence))
+                        entity_list.append(temp_entity)
+                        sentiment_list.append(temp_sentiment)
+                        #print(tempsentence)
+                        #print(ab_model(str(tempsentence)))
+                        #print(Get_sentiment(tempsentence))
 
-    # Write the JSON data to the file
-    data["entities"] = entity_list
-    data["sentiment"] = sentiment_list
+        # Write the JSON data to the file
+        data["entities"] = entity_list
+        data["sentiment"] = sentiment_list
 
-    json_data = json.dumps(data, indent=4, ensure_ascii=False)
-    file.write(json_data + ",\n")
+        json_data = json.dumps(data, indent=4, ensure_ascii=False)
+        file.write(json_data + "\n")
 
-print("TAMAMLANDI")
+    print("TAMAMLANDI")
+    return data
 
+input_sentence = ""
+my_main(input_sentence)
 """
 # JSON DOSYASINI GOOGLE DRIVE UZERINE YUKLEME
 from google.oauth2.credentials import Credentials
