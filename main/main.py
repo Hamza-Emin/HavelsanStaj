@@ -8,8 +8,13 @@ from transformers import BertTokenizer, TFBertForSequenceClassification
 
 nlp = spacy.load('tr_core_news_trf')
 
-sentence = "Turk Telekom her yönden çok daha iyi. Vodafone kullanıyorum ve 70 TL paket ücreti ödüyorum, 15gb 1000dk veriyor. Pahalı geliyor. Turkcell konusunda ise emin değilim."
-#sentence = "Turkcell çok iyi ama Vodafone kötü."
+#ok sentence = "Turk Telekom her yönden çok daha iyi. Vodafone kullanıyorum ve 70 TL paket ücreti ödüyorum, 15gb 1000dk veriyor. Pahalı geliyor. Turkcell konusunda ise emin değilim."
+#ok sentence = "Turkcell çok iyi ama Vodafone kötü."
+#sorunlu 2 entity1 birleşik alıyor sentence = "valla kardeşim vodafone'den türk telekom'a geçtim gayet mutluyum. 1 sene olacak 20 gb paketi 61 lira gibi bir rakama kullanıyorum"
+#ok sentence = "turkcell çok pahalı. aynı koşullardaki tarifelere bakınca mecburen vodafone tercih ediyorum"
+#sorunlu fiilimsi yanlış ayırıyor sentence = "1 gb i̇nterneti 24 liraya satan vodafone vodafonehizmet  siz çok kazıkçısınız. en kısa zamanda sizden kurtulmak dileğiyle"
+#sorunlu span index out of range sentence = "ben de vodafone den ayrılıcam taahhütüm biter bitmez. ikidir 24tl ye 1 gb tanımlıyorlar hattıma hem de ben onay vermeden.. bu ay 106 tl faturam var"
+sentence = "çok mutlu oluruz. al birini vur ötekine. kurumsal dolandırıcılardan bıktım. turkcell vodafonetr"
 
 entities = []
 load_path = 'spacy_trained_model' 
@@ -35,7 +40,7 @@ def ab_model_with_label(text):
     return result
 
 entities = ab_model(sentence)
-#print(entities)
+print(entities)
 
 def get_split_sentences_with_conjunction(entities1, text):
     nlp = spacy.load('tr_core_news_trf')
@@ -59,28 +64,30 @@ def get_split_sentences_with_conjunction(entities1, text):
         if conjunctions: # metinde bağlaç var ise:
           for conjunction in conjunctions: # her bir bağlaç için:
             if k==0: # ilk bağlaç için:
-              if sent[conjunction.i-1] in entities and sent[conjunction.i+1] in entities: # eğer bağlaçtan bir önceki ve sonraki kelime bir entity ise:
-                old_entity = sent[conjunction.i-1] # önceki entity bir değişkende tutulur
-                add_old_entity = True # eski entity sonradan ekleneceği için bool değişkeni True yapılır
-              else: # eğer bağlaçtan bir önceki ve sonraki kelime bir entity değil ise:
-                text = sent[:conjunction.i].text.strip() # bağlaçtan önceki cümle metinden alınır
-                split_sentences.append(text) # alınan metin diziye eklenir
-              k += 1 # ilk bağlaçtan çıkıldığı için sayaç arttırılır
-              old_conjunction = conjunction # eski bağlaç bir değişkende tutulur
+              if sent[conjunction.i-1] is not None and sent[conjunction.i+1] is not None:
+                if sent[conjunction.i-1] in entities and sent[conjunction.i+1] in entities: # eğer bağlaçtan bir önceki ve sonraki kelime bir entity ise:
+                    old_entity = sent[conjunction.i-1] # önceki entity bir değişkende tutulur
+                    add_old_entity = True # eski entity sonradan ekleneceği için bool değişkeni True yapılır
+                else: # eğer bağlaçtan bir önceki ve sonraki kelime bir entity değil ise:
+                    text = sent[:conjunction.i].text.strip() # bağlaçtan önceki cümle metinden alınır
+                    split_sentences.append(text) # alınan metin diziye eklenir
+                k += 1 # ilk bağlaçtan çıkıldığı için sayaç arttırılır
+                old_conjunction = conjunction # eski bağlaç bir değişkende tutulur
             else: # ilk bağlaçtan sonraki bağlaçlar ise:
-              if sent[conjunction.i-1] in entities and sent[conjunction.i+1] in entities: # eğer bağlaçtan bir önceki ve sonraki kelime bir entity ise:
-                old_entity = sent[conjunction.i-1] # önceki entity bir değişkende tutulur
-                add_old_entity = True # eski entity sonradan ekleneceği için bool değişkeni True yapılır
-              else: # eğer bağlaçtan bir önceki ve sonraki kelime bir entity değil ise:
-                text = sent[old_conjunction.i+1:conjunction.i].text.strip() # eski bağlaçtan şu anki bağlaça kadar olan cümle metinden alınır
-                split_sentences.append(text) # alınan metin diziye eklenir
-                if add_old_entity == True: # eski entity nin eklenmesi gerekiyor ise:
-                    text = sent[old_entity.i].text.strip() # eski entity cümleden alınır
-                    text2 = sent[old_conjunction.i+2:conjunction.i].text.strip() # eski bağlaçtan ve entityden sonra şu anki bağlaça kadar olan cümle metinden alınır
-                    split_sentences.append(text + " " + text2) # eski entity ile alınan cümle arasına bir boşluk eklenerek diziye eklenir
-                    add_old_entity = False # eski entity alındığı için bool False değerine getirilir
-              old_conjunction = conjunction # eski bağlaç bir değişkende tutulur
-              k += 1 # baglac sayacı bir arttırılır
+              if sent[conjunction.i-1] is not None and sent[conjunction.i+1] is not None:
+                if sent[conjunction.i-1] in entities and sent[conjunction.i+1] in entities: # eğer bağlaçtan bir önceki ve sonraki kelime bir entity ise:
+                    old_entity = sent[conjunction.i-1] # önceki entity bir değişkende tutulur
+                    add_old_entity = True # eski entity sonradan ekleneceği için bool değişkeni True yapılır
+                else: # eğer bağlaçtan bir önceki ve sonraki kelime bir entity değil ise:
+                    text = sent[old_conjunction.i+1:conjunction.i].text.strip() # eski bağlaçtan şu anki bağlaça kadar olan cümle metinden alınır
+                    split_sentences.append(text) # alınan metin diziye eklenir
+                    if add_old_entity == True: # eski entity nin eklenmesi gerekiyor ise:
+                        text = sent[old_entity.i].text.strip() # eski entity cümleden alınır
+                        text2 = sent[old_conjunction.i+2:conjunction.i].text.strip() # eski bağlaçtan ve entityden sonra şu anki bağlaça kadar olan cümle metinden alınır
+                        split_sentences.append(text + " " + text2) # eski entity ile alınan cümle arasına bir boşluk eklenerek diziye eklenir
+                        add_old_entity = False # eski entity alındığı için bool False değerine getirilir
+                old_conjunction = conjunction # eski bağlaç bir değişkende tutulur
+                k += 1 # baglac sayacı bir arttırılır
           split_sentences.append(sent[conjunction.i + 1:].text.strip()) # son baglactan sonra kalan metin alınır
         else:
             split_sentences.append(sent.text)
@@ -246,7 +253,8 @@ def fix_nonentity_sentences(sentence_result):
         else:
             temp_sentence = temp_sentence + " " + "".join(sentence_result[i])
     new_sentence_result.append(temp_sentence)
-    new_sentence_result.remove("")
+    if("" in new_sentence_result):
+        new_sentence_result.remove("")
     #print("en son")
     #print(new_sentence_result)
     return new_sentence_result
@@ -254,11 +262,10 @@ def fix_nonentity_sentences(sentence_result):
 
 def Dependency_Parser(entities:list, text:str):
     result = get_split_sentences_with_conjunction(entities, text)
-    #print(result)
     sentence_results = []
-    #print("new fonksiyon")
     result = fix_nonentity_sentences(result)
-    #print(result)
+    print("baglac result")
+    print(result)
 
     for sentence in result:
         entity_list = ab_model(sentence)
@@ -266,8 +273,8 @@ def Dependency_Parser(entities:list, text:str):
     return sentence_results
 
 sentence_result = Dependency_Parser(entities, sentence)
-#print("sentence result")
-#print(sentence_result)
+print("fiilimsi result")
+print(sentence_result)
 
 # MODELI YUKLEME
 # model path-to-save isimli klasör içine koyulmalı
@@ -310,7 +317,6 @@ def Get_sentiment(Review, Tokenizer=bert_tokenizer, Model=bert_model):
 #print("Snetence result")
 #print(sentence_result)
 
-
 with open("data.json", "w", encoding='utf-8') as file:
     data = {
         "sentence": sentence
@@ -323,11 +329,11 @@ with open("data.json", "w", encoding='utf-8') as file:
             continue
         else:
             if len(sentence) == 1:
-                #print("Cumle:")
-                #print(sentence_result)
-                if(len(ab_model(str(sentence))) != 0):
-                    temp_entity = str(ab_model(str(sentence))) + " -> " + str(ab_model_with_label(str(sentence)))
-                    temp_sentiment = str(ab_model(str(sentence))) + " -> " + str(Get_sentiment(sentence))
+                print("Entity:")
+                print(ab_model("".join(sentence)))
+                if(len(ab_model("".join(sentence))) != 0):
+                    temp_entity = "".join(ab_model("".join(sentence))) + " -> " + "".join(ab_model_with_label("".join(sentence)))
+                    temp_sentiment = "".join(ab_model("".join(sentence))) + " -> " + "".join(Get_sentiment(sentence))
                     entity_list.append(temp_entity)
                     sentiment_list.append(temp_sentiment)
                 #print(sentence)
@@ -335,11 +341,11 @@ with open("data.json", "w", encoding='utf-8') as file:
                 #print(Get_sentiment(sentence))
             else:
                 for tempsentence in sentence:
-                    #print("Cumle:")
-                    #print(sentence_result)
-                    if(len(ab_model(str(sentence))) != 0):
-                        temp_entity = str(ab_model(str(sentence))) + " -> " + str(ab_model_with_label(str(sentence)))
-                        temp_sentiment = str(ab_model(str(sentence))) + " -> " + str(Get_sentiment(sentence))
+                    print("Entity:")
+                    print(ab_model("".join(sentence)))
+                    if(len(ab_model("".join(sentence))) != 0):
+                        temp_entity = "".join(ab_model("".join(sentence))) + " -> " + "".join(ab_model_with_label("".join(sentence)))
+                        temp_sentiment = "".join(ab_model("".join(sentence))) + " -> " + "".join(Get_sentiment(sentence))
                         entity_list.append(temp_entity)
                         sentiment_list.append(temp_sentiment)
                     #print(tempsentence)
@@ -352,6 +358,7 @@ with open("data.json", "w", encoding='utf-8') as file:
 
     json_data = json.dumps(data, indent=4, ensure_ascii=False)
     file.write(json_data + ",\n")
+
 print("TAMAMLANDI")
 
 """
