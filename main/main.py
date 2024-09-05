@@ -10,10 +10,17 @@ from spacy import displacy
 nlp = spacy.load('tr_core_news_trf')
 load_path = 'spacy_trained_model' 
 nlp.add_pipe('sentencizer')
-#ok sentence = "Turk Telekom her yönden çok daha iyi. Vodafone kullanıyorum ve 70 TL paket ücreti ödüyorum, 15gb 1000dk veriyor. Pahalı geliyor. Turkcell konusunda ise emin değilim."
-#ok sentence = "Turkcell çok iyi ama Vodafone kötü."
-#ok sentence = "valla kardeşim vodafone'den türk telekom'a geçtim gayet mutluyum. 1 sene olacak 20 gb paketi 61 lira gibi bir rakama kullanıyorum"
-#ok sentence = "turkcell çok pahalı. aynı koşullardaki tarifelere bakınca mecburen vodafone tercih ediyorum"
+
+#sentence = "Turk Telekom her yönden çok daha iyi. Vodafone kullanıyorum ve 70 TL paket ücreti ödüyorum, 15gb 1000dk veriyor. Pahalı geliyor. Turkcell konusunda ise emin değilim."
+#sentence = "Turkcell'den çok memnun kaldım ama Vodafone için aynı şeyleri söyleyemem. Hiç memnun kalmadım.""
+#sentence = "al birini vur ötekine. kurumsal dolandırıcılardan bıktım @turkcell @vodafonetr"
+#sentence = "turkcell çok pahalı. aynı koşullardaki tarifelere bakınca mecburen vodafone tercih ediyorum"
+#sentence = "turkcell kazık. türk telekom ekonomik ama çoğu yerde çekmiyor. i̇kisinin ortası vodafone. çekimide öyle bazılarının dediği gibi kötü değil"
+#sentence = "vodafone inanılmaz pahalı. paketim bitmesine 1 gün kala konuşma dk’kam bitti. anında 24 tl yapıştırıp, 1 günlüğüne 250 dakika verdiler. hemde hiç sormuyorlar. şikayet hakkım bile yokmuş.  yılım dolduğu an turktelekom ‘a geçmeyi düşünüyorum, bakalım."
+#sentence = "al bende o kadar ankara’nın göbeğinde çekmiyor. bide kalite diyene ayar oluyorum. fazla faturalarda cabası. vodafone"
+#sentence = "bende sıkıntı yok valla turkcell pişmanlıktır. vodafone candır."
+#sentence = "hepsi halkı soymaya,cebinden haksızca para kazanmaya yemin etmiş sanki. al birini vur diğerine zehir zıkkım olsun. vodafone;0"
+#sentence = "Turk Telekom kullanmaya başladım başlayalı gençleştim resmen. Vodafone kullanırken kelimenin tam anlamıyla yaşlanmıştım."
 
 def ab_model(text): 
     nlp = spacy.load(load_path) 
@@ -40,47 +47,56 @@ def get_split_sentences_with_conjunction(entities1, text):
     doc = nlp(text) # metnin tokenize haline getirilmesi
     split_sentences = [] # çıkarılan cümlelerin tutulacağı dizinin başlatılması
     add_old_entity = False # ilk durumda eski entity eklenmesi bool değeri False verilir.
-    """
+
     for token in doc: # metin içindeki her bir kelime için:
       sentence = [] # elde edilen metnin tutulacağ dizinin başlatılması
       entities = [token for token in doc if token.text in entities1] # entity lerin metin içinden tanınması
       if token.is_sent_end and token in entities: # token en sonda ise ve bir entity ise:
         entity = doc[token.i] # entity metin içinden alınır ve bir değişkende tutulur
         text = doc[:token.i].text.strip() # sondaki entityden önceki bütün metin bir değişkende tutulur
-        sentence.append(entity.text + " " + text) # başa sondaki entity gelecek şekilde bütün metin entity nin sonunda eklenir
+        sentence.append(entity.text + "  " + text) # başa sondaki entity gelecek şekilde bütün metin entity nin sonunda eklenir
         return sentence # son metnin tutulduğu dizi döndürülür
-    """   
+     
     for sent in doc.sents: # metnin her bir cümlesi için:
         conjunctions = [token for token in sent if token.pos_ in ['CCONJ', 'SCONJ'] or token.text == "\0"] # bağlaçların metin içinden tanınması
         entities = [token for token in sent if token.text in entities1] # entity lerin metin içinden tanınması
         k = 0 # ilk bağlaç için bir sayaç oluşturulması
         if conjunctions: # metinde bağlaç var ise:
           for conjunction in conjunctions: # her bir bağlaç için:
-            if k==0: # ilk bağlaç için:
-              if sent[conjunction.i-1] is not None and sent[conjunction.i+1] is not None:
-                if sent[conjunction.i-1] in entities and sent[conjunction.i+1] in entities: # eğer bağlaçtan bir önceki ve sonraki kelime bir entity ise:
-                    old_entity = sent[conjunction.i-1] # önceki entity bir değişkende tutulur
-                    add_old_entity = True # eski entity sonradan ekleneceği için bool değişkeni True yapılır
-                else: # eğer bağlaçtan bir önceki ve sonraki kelime bir entity değil ise:
-                    text = sent[:conjunction.i].text.strip() # bağlaçtan önceki cümle metinden alınır
-                    split_sentences.append(text) # alınan metin diziye eklenir
-                k += 1 # ilk bağlaçtan çıkıldığı için sayaç arttırılır
-                old_conjunction = conjunction # eski bağlaç bir değişkende tutulur
-            else: # ilk bağlaçtan sonraki bağlaçlar ise:
-              if sent[conjunction.i-1] is not None and sent[conjunction.i+1] is not None:
-                if sent[conjunction.i-1] in entities and sent[conjunction.i+1] in entities: # eğer bağlaçtan bir önceki ve sonraki kelime bir entity ise:
-                    old_entity = sent[conjunction.i-1] # önceki entity bir değişkende tutulur
-                    add_old_entity = True # eski entity sonradan ekleneceği için bool değişkeni True yapılır
-                else: # eğer bağlaçtan bir önceki ve sonraki kelime bir entity değil ise:
-                    text = sent[old_conjunction.i+1:conjunction.i].text.strip() # eski bağlaçtan şu anki bağlaça kadar olan cümle metinden alınır
-                    split_sentences.append(text) # alınan metin diziye eklenir
-                    if add_old_entity == True: # eski entity nin eklenmesi gerekiyor ise:
-                        text = sent[old_entity.i].text.strip() # eski entity cümleden alınır
-                        text2 = sent[old_conjunction.i+2:conjunction.i].text.strip() # eski bağlaçtan ve entityden sonra şu anki bağlaça kadar olan cümle metinden alınır
-                        split_sentences.append(text + " " + text2) # eski entity ile alınan cümle arasına bir boşluk eklenerek diziye eklenir
-                        add_old_entity = False # eski entity alındığı için bool False değerine getirilir
-                old_conjunction = conjunction # eski bağlaç bir değişkende tutulur
-                k += 1 # baglac sayacı bir arttırılır
+            try:
+              print(sent.text)
+              print(conjunction.text)
+              if k==0: # ilk bağlaç için:
+                if sent[conjunction.i].is_sent_end or  sent[conjunction.i].is_sent_start:
+                  pass
+                else:
+                  if sent[conjunction.i-1] in entities and sent[conjunction.i+1] in entities: # eğer bağlaçtan bir önceki ve sonraki kelime bir entity ise:
+                      old_entity = sent[conjunction.i-1] # önceki entity bir değişkende tutulur
+                      add_old_entity = True # eski entity sonradan ekleneceği için bool değişkeni True yapılır
+                  else: # eğer bağlaçtan bir önceki ve sonraki kelime bir entity değil ise:
+                      text = sent[:conjunction.i].text.strip() # bağlaçtan önceki cümle metinden alınır
+                      split_sentences.append(text) # alınan metin diziye eklenir
+                  k += 1 # ilk bağlaçtan çıkıldığı için sayaç arttırılır
+                  old_conjunction = conjunction # eski bağlaç bir değişkende tutulur
+              else: # ilk bağlaçtan sonraki bağlaçlar ise:
+                if sent[conjunction.i].is_sent_end or sent[conjunction.i].is_sent_start:
+                  pass
+                else:
+                  if sent[conjunction.i-1] in entities and sent[conjunction.i+1] in entities: # eğer bağlaçtan bir önceki ve sonraki kelime bir entity ise:
+                      old_entity = sent[conjunction.i-1] # önceki entity bir değişkende tutulur
+                      add_old_entity = True # eski entity sonradan ekleneceği için bool değişkeni True yapılır
+                  else: # eğer bağlaçtan bir önceki ve sonraki kelime bir entity değil ise:
+                      text = sent[old_conjunction.i+1:conjunction.i].text.strip() # eski bağlaçtan şu anki bağlaça kadar olan cümle metinden alınır
+                      split_sentences.append(text) # alınan metin diziye eklenir
+                      if add_old_entity == True: # eski entity nin eklenmesi gerekiyor ise:
+                          text = sent[old_entity.i].text.strip() # eski entity cümleden alınır
+                          text2 = sent[old_conjunction.i+2:conjunction.i].text.strip() # eski bağlaçtan ve entityden sonra şu anki bağlaça kadar olan cümle metinden alınır
+                          split_sentences.append(text + " " + text2) # eski entity ile alınan cümle arasına bir boşluk eklenerek diziye eklenir
+                          add_old_entity = False # eski entity alındığı için bool False değerine getirilir
+                  old_conjunction = conjunction # eski bağlaç bir değişkende tutulur
+                  k += 1 # baglac sayacı bir arttırılır
+            except IndexError:
+                split_sentences.append(sent.text)
           split_sentences.append(sent[conjunction.i + 1:].text.strip()) # son baglactan sonra kalan metin alınır
         else:
             split_sentences.append(sent.text)
@@ -324,7 +340,6 @@ def Get_sentiment(Review, Tokenizer=bert_tokenizer, Model=bert_model):
 #print(sentence_result)
 
 def my_main(input_sentence):
-    #sentence = "çok mutlu oluruz. al birini vur ötekine. kurumsal dolandırıcılardan bıktım. turkcell vodafonetr"
     sentence = input_sentence
     entities = []
     entities = ab_model(sentence)
@@ -381,7 +396,7 @@ def my_main(input_sentence):
     print("TAMAMLANDI")
     return data
 
-input_sentence = "tarifenin içeriğinde sosyal medya ( whatsapp instagram facebook twitter) youtubecom sınırsız olduğu söylendi bana."
+input_sentence = "Turk Telekom kullanmaya başladım başlayalı gençleştim resmen. Vodafone kullanırken kelimenin tam anlamıyla yaşlanmıştım."
 my_main(input_sentence)
 
 """
