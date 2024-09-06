@@ -361,7 +361,7 @@ def my_main(input_sentence):
     print("fiilimsi result")
     print(sentence_result)
     
-    with open("data.json", "w", encoding='utf-8') as file:
+    with open("data.json", "a+", encoding='utf-8') as file:
         data = {
             "sentence": sentence
         }
@@ -400,14 +400,14 @@ def my_main(input_sentence):
         data["sentiment"] = sentiment_list
 
         json_data = json.dumps(data, indent=4, ensure_ascii=False)
-        file.write(json_data + "\n")
+        file.write(json_data + ",\n")
 
     print("TAMAMLANDI")
     return data
 
-input_sentence = "Vodafone müşteri hizmetlerini çok beğeniyorum"
+input_sentence = "vodafone çekim gücü çok berbat."
 my_main(input_sentence)
-"""
+
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -459,4 +459,3 @@ else:
     media = MediaFileUpload(file_path, mimetype='text/plain')
     created_file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
     print(f"Dosya başarıyla yüklendi. Dosya ID'si: {created_file.get('id')}")
-"""
