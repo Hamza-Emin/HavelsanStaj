@@ -4,6 +4,7 @@ import json
 import shutil
 import threading
 from main import my_main
+
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -33,17 +34,17 @@ if not creds or not creds.valid:
 # Google Drive API'yi başlatma
 service = build('drive', 'v3', credentials=creds)
 
-# Yüklenecek dosyanın yolu (bilgisayarınızda)
-file_path = "C:/Users/Alperen/Desktop/main/data.json"
-
-# Dosyanın Drive'daki adını belirleyelim
-file_name = os.path.basename(file_path)
-
-# Aynı ada sahip bir dosya olup olmadığını kontrol et
-results = service.files().list(q=f"name='{file_name}'", fields="files(id, name)").execute()
-items = results.get('files', [])
-
 def updateFile():
+    # Yüklenecek dosyanın yolu (bilgisayarınızda)
+    file_path = "C:/Users/Alperen/Desktop/main/data.json"
+
+    # Dosyanın Drive'daki adını belirleyelim
+    file_name = os.path.basename(file_path)
+
+    # Aynı ada sahip bir dosya olup olmadığını kontrol et
+    results = service.files().list(q=f"name='{file_name}'", fields="files(id, name)").execute()
+    items = results.get('files', [])
+
     if items:
         # Dosya varsa güncelle
         file_id = items[0]['id']
@@ -65,14 +66,18 @@ lock = threading.Lock()  # For thread-safe access to shared data
 # Function to simulate sentence processing (takes 10 seconds per sentence)
 def process_and_save_sentence_data(sentence):
     """Simulate processing time (10 seconds) and return processed sentence."""
-    return f"Processed: {my_main(sentence)}"
+    return my_main(sentence)
 
 # Function to save data to JSON file
 def save_results(filename, data):
     """Append data to a JSON file."""
-    with open(filename, 'w', encoding='utf-8') as f:
+    with open(filename, 'w', encoding='utf-8') as file:
         # Wrap the list of sentences in a dictionary for proper JSON structure
-        json.dump(data, f, indent=2)
+        json.dump(data, file, indent=4, ensure_ascii=False)
+        #file.write("\n]")
+        #file.seek(0) #dosya başına gitme
+        #file.write("[\n{")
+
 
 # Function to read JSON file
 def read_json_file(file_path):
@@ -172,4 +177,3 @@ sentence_thread.start()
 queue_thread.join()
 time_thread.join()
 sentence_thread.join()
-

@@ -120,26 +120,21 @@ def get_split_sentences_with_conjunction(entities1, text):
               print(conjunction.text)
               if k==0: # ilk bağlaç için:
                   if sent[conjunction.i-1] in entities and sent[conjunction.i+1] in entities: # eğer bağlaçtan bir önceki ve sonraki kelime bir entity ise:
-                      print("1")
                       old_entity = sent[conjunction.i-1] # önceki entity bir değişkende tutulur
                       add_old_entity = True # eski entity sonradan ekleneceği için bool değişkeni True yapılır
                   else: # eğer bağlaçtan bir önceki ve sonraki kelime bir entity değil ise:
-                      print("2")
                       text = sent[:conjunction.i].text.strip() # bağlaçtan önceki cümle metinden alınır
                       split_sentences.append(text) # alınan metin diziye eklenir
                   k += 1 # ilk bağlaçtan çıkıldığı için sayaç arttırılır
                   old_conjunction = conjunction # eski bağlaç bir değişkende tutulur
               else: # ilk bağlaçtan sonraki bağlaçlar ise:
                   if sent[conjunction.i-1] in entities and sent[conjunction.i+1] in entities: # eğer bağlaçtan bir önceki ve sonraki kelime bir entity ise:
-                      print("3")
                       old_entity = sent[conjunction.i-1] # önceki entity bir değişkende tutulur
                       add_old_entity = True # eski entity sonradan ekleneceği için bool değişkeni True yapılır
                   else: # eğer bağlaçtan bir önceki ve sonraki kelime bir entity değil ise:
-                      print("4")
                       text = sent[old_conjunction.i+1:conjunction.i].text.strip() # eski bağlaçtan şu anki bağlaça kadar olan cümle metinden alınır
                       split_sentences.append(text) # alınan metin diziye eklenir
                       if add_old_entity == True: # eski entity nin eklenmesi gerekiyor ise:
-                          print("5")
                           text = sent[old_entity.i].text.strip() # eski entity cümleden alınır
                           text2 = sent[old_conjunction.i+2:conjunction.i].text.strip() # eski bağlaçtan ve entityden sonra şu anki bağlaça kadar olan cümle metinden alınır
                           split_sentences.append(text + " " + text2) # eski entity ile alınan cümle arasına bir boşluk eklenerek diziye eklenir
@@ -149,10 +144,8 @@ def get_split_sentences_with_conjunction(entities1, text):
             except IndexError:
                 print("IndexError: [E1002] Span index out of range.")
                 split_sentences.append(sent.text)
-          print("6")
           split_sentences.append(sent[conjunction.i + 1:].text.strip()) # son baglactan sonra kalan metin alınır
         else:
-            print("7")
             split_sentences.append(sent.text)
     while("" in split_sentences): # son alınan metin boş string ise diziden silinir
       split_sentences.remove("")
@@ -458,7 +451,7 @@ def my_main(input_sentence):
         #file.write(json_data + ",\n")
 
     print("TAMAMLANDI")
-    uploadFile()
+    #uploadFile()
     return data
 
 input_sentence = "vodafone çekim gücü çok berbat."
