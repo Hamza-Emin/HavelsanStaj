@@ -131,13 +131,12 @@ def find_fiilimsi(sentence):
     doc = nlp(sentence)
 
     fiilimsis = []
-    notallowed = ["vodafone","Vodafone","VODAFONE","Turkcell","Türkcell","türkcell","turkcell","Türktelekom"]
-    words = sentence.split(" ")
+
     for token in doc:
         # Check if the token ends with any of the fiilimsi suffixes
         if any(token.text.endswith(suffix) for suffix in fiilimsi_suffixes):
             # Check dependency and POS tags to filter fiilimsi
-            if (token.dep_ in ["advcl", "ccomp", "amod", "acl"] or (token.pos_ in ['VERB', 'AUX'] and token.dep_ not in ["ROOT"])) and (token.text not in notallowed) and (token.text != words[len(words)-1]):
+            if token.dep_ in ["advcl", "ccomp", "amod", "acl"] or (token.pos_ in ['VERB', 'AUX'] and token.dep_ not in ["ROOT"]):
                 fiilimsis.append(token.text)
 
     return fiilimsis
@@ -178,8 +177,10 @@ def remove_spaces_from_entities(entities, sentence):
 
 def splitting(entity : list, sentence: str):
     copy_entity = entity.copy()
+
     sentence = clean_text_for_dependency_parsing(sentence)
     sentence = normalize_entities(entity, sentence)
+ 
     sentence , entity = remove_spaces_from_entities(entity,sentence)
     sentenceresults = list()
     if sentence.endswith("."):
@@ -193,32 +194,9 @@ def splitting(entity : list, sentence: str):
     elif(numberofentities >1 ):
         numberoffiilimsi = len(find_fiilimsi(sentence=sentence))
         #print(f"Number of fiilimsi is :{numberoffiilimsi}")
-        if(numberoffiilimsi == 0): # 
-          poss = []
-          for tempen in entity:
-            poss.append(sentence.index(tempen))
 
-# Iterate over the positions of entities
-          for i in range(len(poss)-1):
-            position1 = poss[i]
-            position2 = poss[i+1]
-    
-    # Calculate the length of the first entity
-            entitylen1 = len(sentence[position1:].split()[0])
-    
-    # Split the sentence if entities are more than 15 characters apart
-            if position2 - position1 > 15:
-                sentence1 = sentence[position1:position2].strip()  # Take the part between the entities
-                sentenceresults.append(sentence1)
-    
-    # Always take the second part of the sentence after the last entity
-            if i == len(poss) - 2:
-                sentence2 = sentence[position2:].strip()
-                sentenceresults.append(sentence2)
-            
-            
         if(numberoffiilimsi==1) :
-           
+            #print("Hamza")
             entitiypositions = []
             for i in entity:
                 entitiypositions.append(sentence.index(i))
@@ -271,12 +249,15 @@ def splitting(entity : list, sentence: str):
                         if subsentence.find(words) == positions : # with last part after the and  if the entity  is less than the position
                             tempa = tempa.replace(words,"")
                     sentenceresults.append(tempa)
+        else:
+            sentenceresults.append(sentence)
     else:
         sentenceresults.append(sentence)
-
+       
     temp_new_sentence = []
     for sentence in sentenceresults:
-        new_sentence = re.sub("".join(entity), "".join(copy_entity), sentence)
+        for i in range(len(copy_entity)):
+            new_sentence = re.sub("".join(entity[i]), "".join(copy_entity[i]), sentence)
         temp_new_sentence.append(new_sentence)
 
     return temp_new_sentence
