@@ -361,7 +361,7 @@ def my_main(input_sentence):
     print("fiilimsi result")
     print(sentence_result)
     
-    with open("data.json", "a+", encoding='utf-8') as file:
+    with open("data.json", "w", encoding='utf-8') as file:
         data = {
             "sentence": sentence
         }
@@ -399,8 +399,11 @@ def my_main(input_sentence):
         data["entities"] = entity_list
         data["sentiment"] = sentiment_list
 
-        json_data = json.dumps(data, indent=4, ensure_ascii=False)
-        file.write(json_data + ",\n")
+        json.dump(data, file, indent=4, ensure_ascii=False)
+        file.write("\n]")
+        file.seek(0) #dosya başına gitme
+        file.write("[\n{")
+        #file.write(json_data + ",\n")
 
     print("TAMAMLANDI")
     return data
