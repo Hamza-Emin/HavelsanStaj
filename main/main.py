@@ -1,5 +1,6 @@
 #!pip install https://huggingface.co/turkish-nlp-suite/tr_core_news_trf/resolve/main/tr_core_news_trf-1.0-py3-none-any.whl
 
+import ast
 import spacy
 import json
 import re
@@ -64,12 +65,8 @@ def get_split_sentences_with_conjunction(entities1, text):
         if conjunctions: # metinde bağlaç var ise:
           for conjunction in conjunctions: # her bir bağlaç için:
             try:
-              print(sent.text)
               print(conjunction.text)
               if k==0: # ilk bağlaç için:
-                if sent[conjunction.i].is_sent_end or  sent[conjunction.i].is_sent_start:
-                  pass
-                else:
                   if sent[conjunction.i-1] in entities and sent[conjunction.i+1] in entities: # eğer bağlaçtan bir önceki ve sonraki kelime bir entity ise:
                       old_entity = sent[conjunction.i-1] # önceki entity bir değişkende tutulur
                       add_old_entity = True # eski entity sonradan ekleneceği için bool değişkeni True yapılır
@@ -79,9 +76,6 @@ def get_split_sentences_with_conjunction(entities1, text):
                   k += 1 # ilk bağlaçtan çıkıldığı için sayaç arttırılır
                   old_conjunction = conjunction # eski bağlaç bir değişkende tutulur
               else: # ilk bağlaçtan sonraki bağlaçlar ise:
-                if sent[conjunction.i].is_sent_end or sent[conjunction.i].is_sent_start:
-                  pass
-                else:
                   if sent[conjunction.i-1] in entities and sent[conjunction.i+1] in entities: # eğer bağlaçtan bir önceki ve sonraki kelime bir entity ise:
                       old_entity = sent[conjunction.i-1] # önceki entity bir değişkende tutulur
                       add_old_entity = True # eski entity sonradan ekleneceği için bool değişkeni True yapılır
@@ -96,14 +90,14 @@ def get_split_sentences_with_conjunction(entities1, text):
                   old_conjunction = conjunction # eski bağlaç bir değişkende tutulur
                   k += 1 # baglac sayacı bir arttırılır
             except IndexError:
+                print("IndexError: [E1002] Span index out of range.")
                 split_sentences.append(sent.text)
           split_sentences.append(sent[conjunction.i + 1:].text.strip()) # son baglactan sonra kalan metin alınır
         else:
             split_sentences.append(sent.text)
     while("" in split_sentences): # son alınan metin boş string ise diziden silinir
       split_sentences.remove("")
-    #print("SPLITS")
-    #print(split_sentences)
+
     return split_sentences
 
 
@@ -262,28 +256,43 @@ def splitting(entity : list, sentence: str):
 
     return temp_new_sentence
 
+def flatten_out_nested_list(input_list):
+    if input_list is None:
+        return None
+    if not isinstance(input_list, (list, tuple)):
+        return None
+    flattened_list = []
+    for entry in input_list:
+        entry_list = None
+        if not isinstance(entry, list):
+            try:
+                entry_list = ast.literal_eval(entry)
+            except:
+                pass
+        if not entry_list:
+            entry_list = entry
+        if isinstance(entry_list, list):
+            flattened_entry = flatten_out_nested_list(entry_list)
+            if flattened_entry:
+                flattened_list.extend(flattened_entry)
+        else:
+            flattened_list.append(entry)
+    return flattened_list
 
 def fix_nonentity_sentences(sentence_result):
-    #cümleleri gez, entity varsa al, sonrakinde entity yoksa başına ekle
     temp_sentence = ""
     new_sentence_result = []
     for i in range(len(sentence_result)):
         entity = ab_model(str(sentence_result[i]))
-        #print(sentence)
-        #print(len(entity))
         if(len(entity) > 0):
             new_sentence_result.append(temp_sentence)
             temp_sentence = "".join(sentence_result[i])
-            #print("temp_sentence:")
-            #eleman kalmadıysa ekle
-            #print(temp_sentence)
         else:
             temp_sentence = temp_sentence + " " + "".join(sentence_result[i])
     new_sentence_result.append(temp_sentence)
     if("" in new_sentence_result):
         new_sentence_result.remove("")
-    #print("en son")
-    #print(new_sentence_result)
+
     return new_sentence_result
 
 
@@ -335,17 +344,13 @@ def Get_sentiment(Review, Tokenizer=bert_tokenizer, Model=bert_model):
 	pred_labels = [label[i] for i in pred_labels.numpy().tolist()]
 	return pred_labels
 
-#print(ab_model(sentence))
-#print(Get_sentiment(sentence))
-#print("Snetence result")
-#print(sentence_result)
-
 def my_main(input_sentence):
     sentence = input_sentence
     entities = []
     entities = ab_model(sentence)
     print(entities)
-    sentence_result = Dependency_Parser(entities, sentence)
+    old_sentence_result = Dependency_Parser(entities, sentence)
+    sentence_result = flatten_out_nested_list(old_sentence_result)
     print("fiilimsi result")
     print(sentence_result)
     
@@ -363,6 +368,7 @@ def my_main(input_sentence):
                 entities_list = ab_model("".join(sentence))
                 label_list = ab_model_with_label("".join(sentence))
                 if len(sentence) == 1:
+                    print(sentence)
                     print("Entity:")
                     print(ab_model("".join(sentence)))
                     if(len(ab_model("".join(sentence))) != 0):
@@ -371,10 +377,8 @@ def my_main(input_sentence):
                             temp_sentiment = "".join(entities_list[i]) + " -> " + "".join(Get_sentiment(sentence))
                             entity_list.append(temp_entity)
                             sentiment_list.append(temp_sentiment)
-                    #print(sentence)
-                    #print(ab_model(str(sentence)))
-                    #print(Get_sentiment(sentence))
                 else:
+                    print(sentence)
                     print("Entity:")
                     print(ab_model("".join(sentence)))
                     if(len(ab_model("".join(sentence))) != 0):
@@ -383,9 +387,6 @@ def my_main(input_sentence):
                             temp_sentiment = "".join(entities_list[i]) + " -> " + "".join(Get_sentiment(sentence))
                             entity_list.append(temp_entity)
                             sentiment_list.append(temp_sentiment)
-                        #print(tempsentence)
-                        #print(ab_model(str(tempsentence)))
-                        #print(Get_sentiment(tempsentence))
 
         # Write the JSON data to the file
         data["entities"] = entity_list
@@ -397,7 +398,7 @@ def my_main(input_sentence):
     print("TAMAMLANDI")
     return data
 
-input_sentence = "Turk Telekom kullanmaya başladım başlayalı gençleştim resmen. Vodafone kullanırken kelimenin tam anlamıyla yaşlanmıştım."
+input_sentence = "vodafone müşteri hizmetleri iyi ama çekim gücü kötü."
 my_main(input_sentence)
 
 """
