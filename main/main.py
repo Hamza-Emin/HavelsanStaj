@@ -11,6 +11,58 @@ nlp = spacy.load('tr_core_news_trf')
 load_path = 'spacy_trained_model' 
 nlp.add_pipe('sentencizer')
 
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload
+import os
+
+# Google API erişimi için gerekli kapsam (scope)
+SCOPES = ['https://www.googleapis.com/auth/drive.file']
+
+# credentials.json dosyasının bilgisayarınızdaki tam yolu
+creds_path = "C:/Users/Alperen/Desktop/main/credentials.json"
+
+# Kimlik doğrulama ve token yenileme
+creds = None
+if os.path.exists('token.json'):
+    creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+if not creds or not creds.valid:
+    if creds and creds.expired and creds.refresh_token:
+        creds.refresh(Request())
+    else:
+        flow = InstalledAppFlow.from_client_secrets_file(creds_path, SCOPES)
+        creds = flow.run_local_server(port=0)
+    with open('token.json', 'w') as token:
+        token.write(creds.to_json())
+
+# Google Drive API'yi başlatma
+service = build('drive', 'v3', credentials=creds)
+def uploadFile():
+    # Yüklenecek dosyanın yolu (bilgisayarınızda)
+    file_path = "C:/Users/Alperen/Desktop/main/data.json"
+
+    # Dosyanın Drive'daki adını belirleyelim
+    file_name = os.path.basename(file_path)
+
+    # Aynı ada sahip bir dosya olup olmadığını kontrol et
+    results = service.files().list(q=f"name='{file_name}'", fields="files(id, name)").execute()
+    items = results.get('files', [])
+
+    if items:
+        # Dosya varsa güncelle
+        file_id = items[0]['id']
+        media = MediaFileUpload(file_path, mimetype='text/plain')
+        updated_file = service.files().update(fileId=file_id, media_body=media).execute()
+        print(f"Dosya başarıyla güncellendi. Dosya ID'si: {updated_file.get('id')}")
+    else:
+        # Dosya yoksa oluştur
+        file_metadata = {'name': file_name}
+        media = MediaFileUpload(file_path, mimetype='text/plain')
+        created_file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+        print(f"Dosya başarıyla yüklendi. Dosya ID'si: {created_file.get('id')}")
+
 #sentence = "Turk Telekom her yönden çok daha iyi. Vodafone kullanıyorum ve 70 TL paket ücreti ödüyorum, 15gb 1000dk veriyor. Pahalı geliyor. Turkcell konusunda ise emin değilim."
 #sentence = "Turkcell'den çok memnun kaldım ama Vodafone için aynı şeyleri söyleyemem. Hiç memnun kalmadım.""
 #sentence = "al birini vur ötekine. kurumsal dolandırıcılardan bıktım @turkcell @vodafonetr"
@@ -406,59 +458,9 @@ def my_main(input_sentence):
         #file.write(json_data + ",\n")
 
     print("TAMAMLANDI")
+    uploadFile()
     return data
 
 input_sentence = "vodafone çekim gücü çok berbat."
 my_main(input_sentence)
 
-from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaFileUpload
-import os
-
-# Google API erişimi için gerekli kapsam (scope)
-SCOPES = ['https://www.googleapis.com/auth/drive.file']
-
-# credentials.json dosyasının bilgisayarınızdaki tam yolu
-creds_path = "C:/Users/Alperen/Desktop/main/credentials.json"
-
-# Kimlik doğrulama ve token yenileme
-creds = None
-if os.path.exists('token.json'):
-    creds = Credentials.from_authorized_user_file('token.json', SCOPES)
-if not creds or not creds.valid:
-    if creds and creds.expired and creds.refresh_token:
-        creds.refresh(Request())
-    else:
-        flow = InstalledAppFlow.from_client_secrets_file(creds_path, SCOPES)
-        creds = flow.run_local_server(port=0)
-    with open('token.json', 'w') as token:
-        token.write(creds.to_json())
-
-# Google Drive API'yi başlatma
-service = build('drive', 'v3', credentials=creds)
-
-# Yüklenecek dosyanın yolu (bilgisayarınızda)
-file_path = "C:/Users/Alperen/Desktop/main/data.json"
-
-# Dosyanın Drive'daki adını belirleyelim
-file_name = os.path.basename(file_path)
-
-# Aynı ada sahip bir dosya olup olmadığını kontrol et
-results = service.files().list(q=f"name='{file_name}'", fields="files(id, name)").execute()
-items = results.get('files', [])
-
-if items:
-    # Dosya varsa güncelle
-    file_id = items[0]['id']
-    media = MediaFileUpload(file_path, mimetype='text/plain')
-    updated_file = service.files().update(fileId=file_id, media_body=media).execute()
-    print(f"Dosya başarıyla güncellendi. Dosya ID'si: {updated_file.get('id')}")
-else:
-    # Dosya yoksa oluştur
-    file_metadata = {'name': file_name}
-    media = MediaFileUpload(file_path, mimetype='text/plain')
-    created_file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
-    print(f"Dosya başarıyla yüklendi. Dosya ID'si: {created_file.get('id')}")
