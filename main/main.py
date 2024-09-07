@@ -63,6 +63,8 @@ def uploadFile():
         created_file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
         print(f"Dosya başarıyla yüklendi. Dosya ID'si: {created_file.get('id')}")
 
+
+# O R N E K L E R
 #sentence = "Turk Telekom her yönden çok daha iyi. Vodafone kullanıyorum ve 70 TL paket ücreti ödüyorum, 15gb 1000dk veriyor. Pahalı geliyor. Turkcell konusunda ise emin değilim."
 #sentence = "Turkcell'den çok memnun kaldım ama Vodafone için aynı şeyleri söyleyemem. Hiç memnun kalmadım.""
 #sentence = "al birini vur ötekine. kurumsal dolandırıcılardan bıktım @turkcell @vodafonetr"
@@ -308,6 +310,7 @@ def splitting(entity : list, sentence: str):
 
     return temp_new_sentence
 
+
 def flatten_out_nested_list(input_list):
     if input_list is None:
         return None
@@ -330,6 +333,7 @@ def flatten_out_nested_list(input_list):
         else:
             flattened_list.append(entry)
     return flattened_list
+
 
 def fix_nonentity_sentences(sentence_result):
     temp_sentence = ""
@@ -377,6 +381,7 @@ label = {
     2: 'Nötr'
 }
 
+
 def Get_sentiment(Review, Tokenizer=bert_tokenizer, Model=bert_model):
 	# Convert Review to a list if it's not already a list
 	if not isinstance(Review, list):
@@ -395,6 +400,7 @@ def Get_sentiment(Review, Tokenizer=bert_tokenizer, Model=bert_model):
 	# Convert the TensorFlow tensor to a NumPy array and then to a list to get the predicted sentiment labels
 	pred_labels = [label[i] for i in pred_labels.numpy().tolist()]
 	return pred_labels
+
 
 def my_main(input_sentence):
     sentence = input_sentence
@@ -444,16 +450,15 @@ def my_main(input_sentence):
         data["entities"] = entity_list
         data["sentiment"] = sentiment_list
 
-        json.dump(data, file, indent=4, ensure_ascii=False)
-        file.write("\n]")
-        file.seek(0) #dosya başına gitme
-        file.write("[\n{")
+        #json.dump(data, file, indent=4, ensure_ascii=False)
+        #file.write("\n]")
+        #file.seek(0) #dosya başına gitme
+        #file.write("[\n{")
         #file.write(json_data + ",\n")
 
     print("TAMAMLANDI")
     #uploadFile()
     return data
 
-input_sentence = "vodafone çekim gücü çok berbat."
-my_main(input_sentence)
-
+#input_sentence = "vodafone çekim gücü çok berbat."
+#my_main(input_sentence)
