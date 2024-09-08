@@ -1,0 +1,11 @@
+{
+    "sentence": "Turk Telekom kullanmaya başladım başlayalı gençleştim resmen. Vodafone kullanırken kelimenin tam anlamıyla yaşlanmıştım.",
+    "entities": [
+        "Turk Telekom -> Organization",
+        "Vodafone -> Organization"
+    ],
+    "sentiment": [
+        "Turk Telekom -> Olumlu",
+        "Vodafone -> Olumlu"
+    ]
+}
