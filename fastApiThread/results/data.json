@@ -1,0 +1,22 @@
+[
+    {
+        "Sentence": "turkcell çekim gücü çok iyi",
+        "Entities": [
+            "turkcell -> Organization",
+            "çekim gücü -> Service"
+        ],
+        "Sentiments": [
+            "turkcell -> Olumsuz",
+            "çekim gücü -> Olumsuz"
+        ]
+    },
+    {
+        "Sentence": "vodafone yanımda berbat",
+        "Entities": [
+            "vodafone yanımda -> Application"
+        ],
+        "Sentiments": [
+            "vodafone yanımda -> Olumsuz"
+        ]
+    }
+]
